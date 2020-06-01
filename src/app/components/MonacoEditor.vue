@@ -3,8 +3,10 @@
 </template>
 
 <script>
-import "../monaco/editor.css";
-import * as monaco from "../monaco/editor.main.js";
+import 'monaco-editor/min/vs/editor/editor.main.css'
+
+import * as monaco from "monaco-editor";
+
 import { ref, onMounted, onBeforeUnmount } from "vue";
 
 globalThis.MonacoEnvironment = globalThis.MonacoEnvironment || {
@@ -19,12 +21,14 @@ globalThis.MonacoEnvironment = globalThis.MonacoEnvironment || {
     //   return "./html.worker.js";
     // }
     if (label === "typescript" || label === "javascript") {
-      return "../monaco/tsWorker.js";
+      return "./monaco/tsWorker.js";
     }
-    return "../monaco/editorWorker.js";
+    return "./monaco/editorWorker.js";
   }
 };
+
 console.log("monaco", monaco);
+
 const monacoEditorOptions = {
   // value: this.value,
   language: "javascript",
@@ -39,43 +43,45 @@ const monacoEditorOptions = {
   },
   showUnused: true
 };
+const setup = (props, { emit }) => {
+  const themeColor = ref("");
+  const editorContainerRef = ref(null);
+  let editorIns;
+  const resizeEditor = () => {
+    editorIns && editorIns.layout();
+  };
+  onMounted(() => {
+    editorIns = monaco.editor.create(editorContainerRef.value, {
+      ...monacoEditorOptions,
+      value: ""
+    });
+    console.log("editor", editorIns);
+    editorIns.onDidChangeModelContent(e => {
+      const code = editorIns.getValue();
+      // this.value = code
+      emit("change", code);
+      // this.$emit('change', this.code)
+    });
+    themeColor.value = editorIns._themeService
+      .getTheme()
+      .colors.get("editor.background")
+      .toString();
+    window.addEventListener("resize", resizeEditor);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener("resize", resizeEditor);
+    editorIns.dispose();
+  });
+  return {
+    themeColor,
+    editorContainerRef,
+    resizeEditor
+  };
+}
+
 export default {
-  name: "MonacoEditor",
-  setup(props, { emit }) {
-    const themeColor = ref("");
-    const editorContainerRef = ref(null);
-    let editorIns;
-    const resizeEditor = () => {
-      editorIns?.layout();
-    };
-    onMounted(() => {
-      editorIns = monaco.editor.create(editorContainerRef.value, {
-        ...monacoEditorOptions,
-        value: ""
-      });
-      console.log("editor", editorIns);
-      editorIns.onDidChangeModelContent(e => {
-        const code = editorIns.getValue();
-        // this.value = code
-        emit("change", code);
-        // this.$emit('change', this.code)
-      });
-      themeColor.value = editorIns._themeService
-        .getTheme()
-        .colors.get("editor.background")
-        .toString();
-      window.addEventListener("resize", resizeEditor);
-    });
-    onBeforeUnmount(() => {
-      window.removeEventListener("resize", resizeEditor);
-      editorIns.dispose();
-    });
-    return {
-      themeColor,
-      editorContainerRef,
-      resizeEditor
-    };
-  }
+  name: 'MonacoEditor',
+  setup
 };
 </script>
 

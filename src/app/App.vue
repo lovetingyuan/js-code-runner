@@ -3,7 +3,7 @@
     <MonacoEditor v-if="showEditor" ref="editorRef" @change="onCodeChange"></MonacoEditor>
   </div>
   <div id="result">
-    <pre>{{ codeResult }}</pre>
+    <pre ref="resultRef"></pre>
   </div>
 </template>
 
@@ -11,68 +11,99 @@
 import MonacoEditor from "./components/MonacoEditor.vue";
 import Split from "split.js";
 import { ref, onMounted, onBeforeUnmount, nextTick, reactive } from 'vue'
-import serialize from 'serialize-javascript'
 
+const setup = () => {
+  const code = ref('var a = 324')
+  const showEditor = ref(false)
+  const editorRef = ref(null)
+  const resultRef = ref(null)
+  const logCollection = ref([])
+
+  const log = (...args) => {
+    logCollection.value.push(args)
+  }
+
+  window.__log = log // prevent minifier remove log
+
+  const onCodeChange = _code => {
+    if (typeof _code === 'string') {
+      logCollection.value.length = 0
+      try {
+        eval(`(function(){${_code}})()`)
+      } catch (err) {
+        logCollection.value.length = 0
+        resultRef.value.textContent = err.message
+        return
+      }
+      const funcMap = {}
+      const voidMark = Math.random()
+      const symbolMap = {}
+      let result = logCollection.value.map(vals => {
+        return vals.map(val => {
+          if (typeof val === 'function') {
+            return val.toString()
+          }
+          if (val && typeof val === 'object') {
+            return JSON.stringify(val, (k, v) => {
+              if (typeof v === 'undefined') {
+                return voidMark
+              }
+              if (typeof v === 'function') {
+                const id = Math.random()
+                funcMap[id] = v.toString()
+                return id
+              }
+              if (typeof v === 'symbol') {
+                const id = Math.random()
+                symbolMap[id] = v.toString()
+                return id
+              }
+              return v
+            }, 2)
+          }
+          return val
+        }).join('\n')
+      }).join('\n\n')
+      Object.keys(funcMap).forEach(id => {
+        result = result.replace(id, funcMap[id])
+      })
+      Object.keys(symbolMap).forEach(id => {
+        result = result.replace(id, symbolMap[id])
+      })
+      result = result.replace(new RegExp(voidMark, 'g'), 'undefined')
+      resultRef.value.textContent = result
+    }
+  }
+  let splitins
+  onMounted(() => {
+    splitins = Split(["#code", "#result"], {
+      sizes: [61.8, 100 - 61.8],
+      onDragEnd: () => {
+        editorRef.value.resizeEditor();
+      }
+    });
+    nextTick(() => {
+      // delay to render editor
+      showEditor.value = true;
+    });
+  })
+  onBeforeUnmount(() => {
+    splitins && splitins.destroy()
+  })
+  return {
+    showEditor,
+    code,
+    onCodeChange,
+    editorRef,
+    resultRef
+  }
+}
 export default {
   name: "App",
   components: {
     MonacoEditor
   },
-  setup() {
-    const code = ref('var a = 324')
-    const showEditor = ref(false)
-    const editorRef = ref(null)
-    const codeResult = ref('/* code result */')
-    const logCollection = ref([])
-
-    const log = (...args) => {
-      logCollection.value.push(args)
-    }
-
-    const onCodeChange = _code => {
-      if (typeof _code === 'string') {
-        logCollection.value.length = 0
-        try {
-          eval(`(function(){${_code}})()`)
-        } catch (err) {
-          logCollection.value.length = 0
-          codeResult.value = err.message
-          return
-        }
-        codeResult.value = logCollection.value.map(vals => {
-          return vals.map(v => {
-            if (v && typeof v === 'object') {
-              return serialize(v, { space: 2 })
-            }
-            return v
-          }).join(' ')
-        }).join('\n')
-      }
-    }
-    let splitins
-    onMounted(() => {
-      splitins = Split(["#code", "#result"], {
-        sizes: [61.8, 100 - 61.8],
-        onDragEnd: () => {
-          editorRef.value.resizeEditor();
-        }
-      });
-      nextTick(() => {
-        // delay to render editor
-        showEditor.value = true;
-      });
-    })
-    onBeforeUnmount(() => {
-      splitins?.destroy()
-    })
-    return {
-      showEditor,
-      code,
-      codeResult,
-      onCodeChange,
-      editorRef
-    }
-  },
+  setup,
 };
 </script>
 

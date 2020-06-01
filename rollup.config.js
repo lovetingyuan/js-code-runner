@@ -1,40 +1,44 @@
-const postcssPlugin = require('rollup-plugin-postcss')
+// const postcssPlugin = require('rollup-plugin-postcss')
 const path = require('path')
 const fs = require('fs')
-const urlPlugin = require("postcss-url")
-const dist = path.resolve(__dirname, 'src/app/monaco')
+// const urlPlugin = require("postcss-url")
+const isBuild = process.env.NODE_ENV === 'production'
+const dist = path.resolve(__dirname, isBuild ? 'src/app/monaco' : 'dist/web/monaco')
+
 if (!fs.existsSync(dist)) {
   fs.mkdirSync(dist)
 }
 
 const resolve = file => path.posix.join(dist, file)
 
-module.exports = [{
-  input: './node_modules/monaco-editor/esm/vs/editor/editor.main.js',
-  output: {
-    dir: dist,
-    format: 'es'
-  },
-  plugins: [
-    postcssPlugin({
-      extract: resolve('editor.css'),
-      sourceMap: false,
-      plugins: [
-        urlPlugin({
-          url(arg) {
-            if (!arg.url.startsWith('data:')) {
-              fs.copyFileSync(arg.absolutePath, resolve(arg.pathname))
-            }
-            return arg.url
-          },
-          // basePath: path.resolve('node_modules/bootstrap'),
-          // assetsPath: path.resolve('monaco'),
-          useHash: false
-        })
-      ]
-    })
-  ]
-}, {
+module.exports = [
+//   {
+//   input: './node_modules/monaco-editor/esm/vs/editor/editor.main.js',
+//   output: {
+//     dir: dist,
+//     format: 'es'
+//   },
+//   plugins: [
+//     postcssPlugin({
+//       extract: resolve('editor.css'),
+//       sourceMap: false,
+//       plugins: [
+//         urlPlugin({
+//           url(arg) {
+//             if (!arg.url.startsWith('data:')) {
+//               fs.copyFileSync(arg.absolutePath, resolve(arg.pathname))
+//             }
+//             return arg.url
+//           },
+//           // basePath: path.resolve('node_modules/bootstrap'),
+//           // assetsPath: path.resolve('monaco'),
+//           useHash: false
+//         })
+//       ]
+//     })
+//   ]
+// },
+{
   input: './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js',
   output: {
     file: resolve('tsWorker.js'),
