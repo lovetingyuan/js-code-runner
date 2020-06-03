@@ -6,7 +6,7 @@
   "scripts": {
     "start": "concurrently \"electron --inspect=5858 ./\" \"vite serve ./src/app\"",
     "build:web": "rimraf dist && vite build ./src/app --outDir dist/web --base ./",
-    "postbuild:web": "npx cross-env NODE_ENV=production && npx rollup -c",
+    "postbuild:web": "npx copyfiles src/app/monaco/*.js dist/web/monaco -f",
     "build": "rimraf dist && npm run build:web && electron-builder",
     "build:monaco": "rimraf src/app/monaco/* && npx rollup -c"
   },
@@ -25,6 +25,7 @@
   "author": "tingyuan",
   "license": "MIT",
   "dependencies": {
+    "dedent": "^0.7.0",
     "electron-is-dev": "^1.2.0",
     "monaco-editor": "^0.20.0",
     "normalize.css": "^8.0.1",
@@ -40,7 +41,7 @@
     "postcss-url": "^8.0.0",
     "rimraf": "^3.0.2",
     "rollup-plugin-postcss": "^3.1.1",
-    "vite": "^0.19.3"
+    "vite": "^0.20.2"
   },
   "build": {
     "appId": "me.tingyuan.jscoderunner",

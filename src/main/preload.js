@@ -9,10 +9,5 @@ window.Api = {
   },
   get Env () {
     return JSON.stringify(process.env, null, 2)
-  },
-  reload () {
-    const { remote } = require('electron')
-    remote.app.relaunch()
-    remote.app.exit()
   }
 }

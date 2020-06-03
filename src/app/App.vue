@@ -3,12 +3,14 @@
     <MonacoEditor v-if="showEditor" ref="editorRef" @change="onCodeChange"></MonacoEditor>
   </div>
   <div id="result">
-    <pre ref="resultRef"></pre>
+    <pre v-for="ret of results" :key="ret">{{ret}}</pre>
   </div>
+  <CodeSandbox :code="code" @change="onResult"></CodeSandbox>
 </template>
 
 <script>
 import MonacoEditor from "./components/MonacoEditor.vue";
+import CodeSandbox from './components/CodeSandbox.vue';
 import Split from "split.js";
 import { ref, onMounted, onBeforeUnmount, nextTick, reactive } from 'vue'
 
@@ -16,62 +18,19 @@ const setup = () => {
   const code = ref('var a = 324')
   const showEditor = ref(false)
   const editorRef = ref(null)
-  const resultRef = ref(null)
-  const logCollection = ref([])
-
-  const log = (...args) => {
-    logCollection.value.push(args)
-  }
-
-  window.__log = log // prevent minifier remove log
+  const results = ref([])
 
   const onCodeChange = _code => {
     if (typeof _code === 'string') {
-      logCollection.value.length = 0
-      try {
-        eval(`(function(){${_code}})()`)
-      } catch (err) {
-        logCollection.value.length = 0
-        resultRef.value.textContent = err.message
-        return
-      }
-      const funcMap = {}
-      const voidMark = Math.random()
-      const symbolMap = {}
-      let result = logCollection.value.map(vals => {
-        return vals.map(val => {
-          if (typeof val === 'function') {
-            return val.toString()
-          }
-          if (val && typeof val === 'object') {
-            return JSON.stringify(val, (k, v) => {
-              if (typeof v === 'undefined') {
-                return voidMark
-              }
-              if (typeof v === 'function') {
-                const id = Math.random()
-                funcMap[id] = v.toString()
-                return id
-              }
-              if (typeof v === 'symbol') {
-                const id = Math.random()
-                symbolMap[id] = v.toString()
-                return id
-              }
-              return v
-            }, 2)
-          }
-          return val
-        }).join('\n')
-      }).join('\n\n')
-      Object.keys(funcMap).forEach(id => {
-        result = result.replace(id, funcMap[id])
-      })
-      Object.keys(symbolMap).forEach(id => {
-        result = result.replace(id, symbolMap[id])
-      })
-      result = result.replace(new RegExp(voidMark, 'g'), 'undefined')
-      resultRef.value.textContent = result
+      code.value = `(function(){${_code}})()`
+    }
+  }
+
+  const onResult = ret => {
+    if (typeof ret === 'string') {
+      results.value = [ret]
+    } else {
+      results.value = ret
     }
   }
   let splitins
@@ -95,13 +54,15 @@ const setup = () => {
     code,
     onCodeChange,
     editorRef,
-    resultRef
+    results,
+    onResult
   }
 }
 export default {
   name: "App",
   components: {
-    MonacoEditor
+    MonacoEditor,
+    CodeSandbox
   },
   setup,
 };
@@ -112,6 +73,10 @@ body,
 html {
   height: 100%;
 }
+#app {
+  height: 100%;
+  overflow: hidden;
+}
 #code {
   height: 100%;
   display: inline-block;
@@ -121,10 +86,18 @@ html {
   height: 100%;
   display: inline-block;
   background-color: antiquewhite;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: auto;
   padding: 2em 2em;
   box-sizing: border-box;
+}
+#result pre {
+  border-bottom: 1px solid skyblue;
+  padding-bottom: 10px;
+  padding-left: 12px;
+  padding-right: 12px;;
+  margin: 24px 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI",
+    HelveticaNeue-Light, Ubuntu, "Droid Sans", sans-serif;
 }
 .gutter {
   background-color: #eee;

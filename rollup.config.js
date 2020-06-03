@@ -2,8 +2,7 @@
 const path = require('path')
 const fs = require('fs')
 // const urlPlugin = require("postcss-url")
-const isBuild = process.env.NODE_ENV === 'production'
-const dist = path.resolve(__dirname, isBuild ? 'src/app/monaco' : 'dist/web/monaco')
+const dist = path.resolve(__dirname, 'src/app/monaco')
 
 if (!fs.existsSync(dist)) {
   fs.mkdirSync(dist)

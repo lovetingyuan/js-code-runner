@@ -7,20 +7,15 @@ require('./menu')
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
   })
+  mainWindow.maximize()
   // and load the index.html of the app.
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000/')
     mainWindow.webContents.openDevTools()
-    // globalShortcut.register('f5', function () {
-    //   console.log('f5 is pressed')
-    //   mainWindow.reload()
-    // })
     globalShortcut.register('CommandOrControl+R', function () {
       mainWindow.reload()
     })
